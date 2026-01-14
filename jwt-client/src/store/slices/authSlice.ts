@@ -7,21 +7,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Флаг для предотвращения множественных одновременных запросов на refresh
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
+// Упрощенная версия без обработки одновременных запросов
 
 // Interceptor для обработки 401 ошибок и автоматического обновления токенов
 api.interceptors.response.use(
@@ -30,29 +16,17 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then(() => {
-          return api(originalRequest);
-        }).catch((err) => {
-          return Promise.reject(err);
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
+        // Пытаемся обновить токены
         await api.post("/refresh");
-        processQueue(null);
+        // Если успешно - повторяем оригинальный запрос
         return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
-        // Если refresh не удался, пользователь не авторизован
+        // Если refresh не удался - возвращаем ошибку
+        console.log('Не авторизован - токены истекли');
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
