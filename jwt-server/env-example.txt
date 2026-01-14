@@ -1,0 +1,5 @@
+Создайте файл .env в корне сервера со следующими переменными:
+
+MONGO_URL=mongodb://localhost:27017/jwt-auth
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_REFRESH_SECRET=your-super-secret-refresh-jwt-key-here

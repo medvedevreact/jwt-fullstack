@@ -7,7 +7,8 @@ interface IUser {
   password: string;
   createdAt: Date;
   updatedAt: Date;
-  generateToken: () => string;
+  generateAccessToken: () => string;
+  generateRefreshToken: () => string;
 }
 
 interface IUserDoc extends Document, IUser {}
@@ -63,9 +64,15 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-userSchema.methods.generateToken = function () {
+userSchema.methods.generateAccessToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
-    expiresIn: '1h',
+    expiresIn: '15m', // Короткое время жизни для безопасности
+  });
+};
+
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_REFRESH_SECRET as string, {
+    expiresIn: '7d', // Долгое время жизни
   });
 };
 
